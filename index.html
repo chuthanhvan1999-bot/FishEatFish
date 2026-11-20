@@ -1,0 +1,1152 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pikachu - Thử thách nối hình</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #c2f5ff, #e8d9ff);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.game {
+    width: 100%;
+    max-width: 1100px;
+    background: white;
+    padding: 22px;
+    border-radius: 22px;
+    box-shadow: 0 10px 35px #0002;
+}
+
+h1 {
+    text-align: center;
+    color: #7048b8;
+    margin: 0 0 15px;
+}
+
+.info {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.info div {
+    background: #f1ebff;
+    color: #6844a8;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.level-name {
+    text-align: center;
+    color: #7654b5;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-bottom: 18px;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+    font-weight: bold;
+}
+
+.controls button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    color: white;
+    background: #8b64d8;
+    transition: 0.2s;
+}
+
+.controls button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+}
+
+#restart {
+    background: #ef7795;
+}
+
+#hint {
+    background: #e5a33d;
+}
+
+#shuffle {
+    background: #36a9a0;
+}
+
+#pause {
+    background: #7185c7;
+}
+
+.board-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #e9e1ff;
+    border-radius: 14px;
+    padding: 8px;
+}
+
+.board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+    aspect-ratio: 14 / 10;
+}
+
+.tile {
+    min-width: 0;
+    min-height: 0;
+    border-radius: 7px;
+    background: white;
+    border: 2px solid #d6c6ff;
+    font-size: clamp(12px, 3vw, 29px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transition: 0.15s;
+    user-select: none;
+}
+
+.tile:hover {
+    background: #fff4c8;
+    border-color: #e9b84d;
+    transform: scale(1.04);
+    z-index: 2;
+}
+
+.tile.selected {
+    background: #ffe49a;
+    border: 3px solid #ff9e25;
+    transform: scale(1.05);
+    z-index: 3;
+}
+
+.tile.hint {
+    background: #b7ffe0;
+    border: 3px solid #16b77d;
+    animation: pulse 0.6s infinite alternate;
+    z-index: 3;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.09); }
+}
+
+.hole {
+    background: transparent;
+    border: none;
+    pointer-events: none;
+}
+
+.line-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+    z-index: 10;
+}
+
+.connect-line {
+    fill: none;
+    stroke: #ff8a00;
+    stroke-width: 0.13;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 0.25 0.08;
+    animation: lineAppear 0.25s linear;
+}
+
+@keyframes lineAppear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.message {
+    text-align: center;
+    font-size: 19px;
+    font-weight: bold;
+    color: #7548bd;
+    margin-top: 15px;
+    min-height: 28px;
+}
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: #0009;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    padding: 20px;
+}
+
+.overlay-box {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 380px;
+}
+
+.overlay-box h2 {
+    color: #8052c5;
+}
+
+.overlay-box button {
+    padding: 12px 25px;
+    border-radius: 10px;
+    background: #8052c5;
+    color: white;
+    margin-top: 10px;
+}
+
+@media(max-width: 600px) {
+    .game {
+        padding: 10px;
+    }
+
+    .info div {
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    .controls button {
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+
+    .board {
+        gap: 2px;
+    }
+
+    .tile {
+        border-width: 1px;
+        border-radius: 4px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>🐾 PIKACHU - NỐI HÌNH 🐾</h1>
+
+    <div class="info">
+        <div>🏆 Điểm: <span id="score">0</span></div>
+        <div>⏱ Thời gian: <span id="time">600</span>s</div>
+        <div>🎮 Màn: <span id="level">1</span></div>
+        <div>💡 Gợi ý: <span id="hints">3</span></div>
+        <div>🔀 Xáo trộn: <span id="shuffles">10</span></div>
+    </div>
+
+    <div class="level-name" id="levelName">
+        Màn 1 - Bàn đầy đủ
+    </div>
+
+    <div class="controls">
+        <button id="restart">🔄 Chơi lại</button>
+        <button id="hint">💡 Gợi ý</button>
+        <button id="shuffle">🔀 Xáo trộn</button>
+        <button id="pause">⏸ Tạm dừng</button>
+    </div>
+
+    <div class="board-wrapper">
+        <div class="board" id="board"></div>
+    </div>
+
+    <div class="message" id="message">
+        Hãy tìm hai Pokémon giống nhau!
+    </div>
+
+</div>
+
+<div class="overlay" id="overlay">
+    <div class="overlay-box">
+        <h2 id="overlayTitle">Thông báo</h2>
+        <p id="overlayText"></p>
+        <button id="overlayButton">Tiếp tục</button>
+    </div>
+</div>
+
+<script>
+const ROWS = 10;
+const COLS = 14;
+
+const INITIAL_TIME = 600;
+const EXTRA_TIME = 120;
+
+const INITIAL_SHUFFLES = 10;
+const HINTS_PER_LEVEL = 3;
+
+const pokemons = [
+    "🐱","🐶","🐸","🐼","🐵",
+    "🦊","🐯","🐨","🐰","🐷",
+    "🐮","🐹","🐻","🐙","🦄",
+    "🐢","🐬","🐳","🦋","🐞",
+    "🐥","🦉","🦁","🐺","🐗",
+    "🐝","🦖","🐲","🐧","🦩",
+    "🐠","🦀","🐌","🦔","🐿️"
+];
+
+let board = [];
+let selected = null;
+
+let score = 0;
+let time = INITIAL_TIME;
+let level = 1;
+
+let shuffleCount = INITIAL_SHUFFLES;
+let hintCount = HINTS_PER_LEVEL;
+
+let timer = null;
+let paused = false;
+let gameOver = false;
+let busy = false;
+
+let hintTimeout = null;
+let lineTimeout = null;
+
+const boardElement = document.getElementById("board");
+const messageElement = document.getElementById("message");
+
+const shapeNames = {
+    full: "Bàn đầy đủ",
+    top: "Thụt phía trên",
+    bottom: "Thụt phía dưới",
+    left: "Thụt bên trái",
+    right: "Thụt bên phải",
+    middleRight: "Thụt giữa bên phải",
+    middleLeft: "Thụt giữa bên trái",
+    both: "Thụt vào hai bên"
+};
+
+const shapeOrder = [
+    "full",
+    "top",
+    "bottom",
+    "left",
+    "right",
+    "middleRight",
+    "middleLeft",
+    "both"
+];
+
+let currentShape = "full";
+
+function randomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// ===============================
+// TẠO HÌNH DẠNG BÀN CHƠI
+// ===============================
+
+function getShapeForLevel() {
+    if (level <= 8) {
+        return shapeOrder[level - 1];
+    }
+
+    // Từ màn 9: chọn kiểu bàn ngẫu nhiên
+    return randomItem([
+        "top",
+        "bottom",
+        "left",
+        "right",
+        "middleRight",
+        "middleLeft",
+        "both"
+    ]);
+}
+
+function isActiveCell(r, c, shape) {
+
+    if (shape === "full") return true;
+
+    if (shape === "top") {
+        if (r <= 1) return c >= 3 && c <= 10;
+        return true;
+    }
+
+    if (shape === "bottom") {
+        if (r >= 8) return c >= 3 && c <= 10;
+        return true;
+    }
+
+    if (shape === "left") {
+        if (r >= 2 && r <= 7) return c >= 3;
+        return true;
+    }
+
+    if (shape === "right") {
+        if (r >= 2 && r <= 7) return c <= 10;
+        return true;
+    }
+
+    if (shape === "middleRight") {
+        if (r >= 3 && r <= 6) return c <= 10;
+        return true;
+    }
+
+    if (shape === "middleLeft") {
+        if (r >= 3 && r <= 6) return c >= 3;
+        return true;
+    }
+
+    if (shape === "both") {
+        if (r >= 2 && r <= 7) return c >= 2 && c <= 11;
+        return true;
+    }
+
+    return true;
+}
+
+// ===============================
+// KHỞI TẠO GAME
+// ===============================
+
+function startGame() {
+    clearInterval(timer);
+    clearTimeout(hintTimeout);
+    clearTimeout(lineTimeout);
+
+    score = 0;
+    time = INITIAL_TIME;
+    level = 1;
+
+    shuffleCount = INITIAL_SHUFFLES;
+    hintCount = HINTS_PER_LEVEL;
+
+    selected = null;
+    paused = false;
+    gameOver = false;
+    busy = false;
+
+    document.getElementById("overlay").style.display = "none";
+    document.getElementById("pause").textContent = "⏸ Tạm dừng";
+
+    generateBoard();
+    updateInfo();
+    startTimer();
+
+    messageElement.textContent = "Hãy tìm hai Pokémon giống nhau!";
+}
+
+function generateBoard() {
+
+    currentShape = getShapeForLevel();
+
+    board = Array.from(
+        { length: ROWS },
+        () => Array(COLS).fill(null)
+    );
+
+    let positions = [];
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+
+            if (isActiveCell(r, c, currentShape)) {
+                positions.push({ r, c });
+            }
+        }
+    }
+
+    // Bảo đảm số ô là số chẵn
+    if (positions.length % 2 !== 0) {
+        positions.pop();
+    }
+
+    let values = [];
+
+    for (let i = 0; i < positions.length / 2; i++) {
+        const pokemon = randomItem(pokemons);
+
+        values.push(pokemon);
+        values.push(pokemon);
+    }
+
+    shuffleArray(values);
+
+    positions.forEach((pos, index) => {
+        board[pos.r][pos.c] = values[index];
+    });
+
+    selected = null;
+
+    renderBoard();
+    ensureMove();
+    updateLevelName();
+}
+
+// ===============================
+// HIỂN THỊ BÀN CHƠI
+// ===============================
+
+function renderBoard() {
+
+    boardElement.innerHTML = "";
+
+    for (let r = 0; r < ROWS; r++) {
+
+        for (let c = 0; c < COLS; c++) {
+
+            const value = board[r][c];
+
+            if (value === null) {
+
+                const hole = document.createElement("div");
+                hole.className = "hole";
+                boardElement.appendChild(hole);
+
+                continue;
+            }
+
+            const button = document.createElement("button");
+
+            button.className = "tile";
+            button.textContent = value;
+
+            button.dataset.r = r;
+            button.dataset.c = c;
+
+            if (
+                selected &&
+                selected.r === r &&
+                selected.c === c
+            ) {
+                button.classList.add("selected");
+            }
+
+            button.addEventListener("click", () => {
+                selectTile(r, c);
+            });
+
+            boardElement.appendChild(button);
+        }
+    }
+
+    const svg = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg"
+    );
+
+    svg.setAttribute("class", "line-layer");
+    svg.setAttribute("viewBox", `-1 -1 ${COLS + 2} ${ROWS + 2}`);
+    svg.setAttribute("preserveAspectRatio", "none");
+
+    boardElement.appendChild(svg);
+}
+
+function updateLevelName() {
+    document.getElementById("levelName").textContent =
+        `Màn ${level} - ${shapeNames[currentShape]}`;
+}
+
+// ===============================
+// CHỌN POKEMON
+// ===============================
+
+function selectTile(r, c) {
+
+    if (gameOver || paused || busy) return;
+
+    if (board[r][c] === null) return;
+
+    if (!selected) {
+
+        selected = { r, c };
+        renderBoard();
+
+        return;
+    }
+
+    if (selected.r === r && selected.c === c) {
+
+        selected = null;
+        renderBoard();
+
+        return;
+    }
+
+    const first = selected;
+    const second = { r, c };
+
+    if (board[first.r][first.c] === board[r][c]) {
+
+        const path = findPath(first, second);
+
+        if (path) {
+
+            busy = true;
+
+            board[first.r][first.c] = null;
+            board[r][c] = null;
+
+            selected = null;
+
+            score += 10;
+
+            renderBoard();
+            drawLine(path);
+            updateInfo();
+
+            messageElement.textContent = "✨ Nối thành công! +10 điểm";
+
+            setTimeout(() => {
+
+                clearLine();
+                busy = false;
+
+                if (isWin()) {
+                    nextLevel();
+                } else {
+                    ensureMove();
+                }
+
+            }, 350);
+
+            return;
+        }
+    }
+
+    selected = second;
+    renderBoard();
+}
+
+// ===============================
+// TÌM ĐƯỜNG NỐI TỐI ĐA 2 GÓC
+// ===============================
+
+function findPath(start, end) {
+
+    const directions = [
+        [0, 1],
+        [0, -1],
+        [1, 0],
+        [-1, 0]
+    ];
+
+    const queue = [];
+
+    const visited = new Set();
+
+    queue.push({
+        r: start.r,
+        c: start.c,
+        dir: -1,
+        turns: 0,
+        path: [{ r: start.r, c: start.c }]
+    });
+
+    while (queue.length > 0) {
+
+        const current = queue.shift();
+
+        for (let d = 0; d < 4; d++) {
+
+            const [dr, dc] = directions[d];
+
+            const nr = current.r + dr;
+            const nc = current.c + dc;
+
+            const newTurns =
+                current.dir === -1 || current.dir === d
+                    ? current.turns
+                    : current.turns + 1;
+
+            if (newTurns > 2) continue;
+
+            // Cho phép đi ra ngoài bàn một ô
+            if (
+                nr < -1 ||
+                nr > ROWS ||
+                nc < -1 ||
+                nc > COLS
+            ) {
+                continue;
+            }
+
+            const isTarget =
+                nr === end.r && nc === end.c;
+
+            const isOutside =
+                nr === -1 ||
+                nr === ROWS ||
+                nc === -1 ||
+                nc === COLS;
+
+            if (!isTarget && !isOutside) {
+
+                if (board[nr][nc] !== null) {
+                    continue;
+                }
+            }
+
+            const key = `${nr},${nc},${d},${newTurns}`;
+
+            if (visited.has(key)) continue;
+
+            visited.add(key);
+
+            const newPath = [
+                ...current.path,
+                { r: nr, c: nc }
+            ];
+
+            if (isTarget) {
+                return newPath;
+            }
+
+            queue.push({
+                r: nr,
+                c: nc,
+                dir: d,
+                turns: newTurns,
+                path: newPath
+            });
+        }
+    }
+
+    return null;
+}
+
+// ===============================
+// VẼ ĐƯỜNG NỐI
+// ===============================
+
+function drawLine(path) {
+
+    const svg = boardElement.querySelector("svg");
+
+    if (!svg) return;
+
+    const points = path.map(p => {
+        return `${p.c + 0.5},${p.r + 0.5}`;
+    }).join(" ");
+
+    const polyline = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "polyline"
+    );
+
+    polyline.setAttribute("points", points);
+    polyline.setAttribute("class", "connect-line");
+
+    svg.appendChild(polyline);
+}
+
+function clearLine() {
+
+    const svg = boardElement.querySelector("svg");
+
+    if (svg) {
+        svg.innerHTML = "";
+    }
+}
+
+// ===============================
+// KIỂM TRA THẮNG
+// ===============================
+
+function isWin() {
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+
+            if (board[r][c] !== null) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+// ===============================
+// TÌM CẶP CÓ THỂ NỐI
+// ===============================
+
+function findAvailablePair() {
+
+    const positions = [];
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+
+            if (board[r][c] !== null) {
+                positions.push({ r, c });
+            }
+        }
+    }
+
+    for (let i = 0; i < positions.length; i++) {
+
+        for (let j = i + 1; j < positions.length; j++) {
+
+            const a = positions[i];
+            const b = positions[j];
+
+            if (
+                board[a.r][a.c] === board[b.r][b.c] &&
+                findPath(a, b)
+            ) {
+                return { a, b };
+            }
+        }
+    }
+
+    return null;
+}
+
+// ===============================
+// TỰ ĐỘNG XÁO TRỘN KHI HẾT NƯỚC
+// ===============================
+
+function ensureMove() {
+
+    if (gameOver || paused || isWin()) return;
+
+    if (!findAvailablePair()) {
+
+        messageElement.textContent =
+            "🔄 Không còn nước đi! Đang tự động xáo trộn...";
+
+        shuffleBoard(true);
+    }
+}
+
+// ===============================
+// XÁO TRỘN
+// ===============================
+
+function shuffleBoard(auto = false) {
+
+    if (gameOver || paused || busy) return;
+
+    if (!auto && shuffleCount <= 0) {
+
+        messageElement.textContent =
+            "Bạn đã hết lượt xáo trộn!";
+
+        return;
+    }
+
+    if (!auto) {
+        shuffleCount--;
+    }
+
+    let positions = [];
+    let values = [];
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+
+            if (board[r][c] !== null) {
+
+                positions.push({ r, c });
+                values.push(board[r][c]);
+            }
+        }
+    }
+
+    // Thử nhiều cách xáo để tìm được nước đi
+    let found = false;
+
+    for (let attempt = 0; attempt < 250; attempt++) {
+
+        shuffleArray(values);
+
+        positions.forEach((pos, index) => {
+            board[pos.r][pos.c] = values[index];
+        });
+
+        if (findAvailablePair()) {
+            found = true;
+            break;
+        }
+    }
+
+    selected = null;
+
+    renderBoard();
+    updateInfo();
+
+    messageElement.textContent = auto
+        ? "🔄 Bàn chơi đã tự động xáo trộn!"
+        : "🔀 Đã xáo trộn bàn chơi!";
+
+    if (!found) {
+        messageElement.textContent =
+            "Không thể tìm được nước đi, hãy thử xáo trộn lại!";
+    }
+}
+
+// ===============================
+// GỢI Ý
+// ===============================
+
+function showHint() {
+
+    if (gameOver || paused || busy) return;
+
+    if (hintCount <= 0) {
+
+        messageElement.textContent =
+            "Bạn đã hết lượt gợi ý trong màn này!";
+
+        return;
+    }
+
+    const pair = findAvailablePair();
+
+    if (!pair) {
+        ensureMove();
+        return;
+    }
+
+    hintCount--;
+
+    updateInfo();
+
+    renderBoard();
+
+    const buttons = boardElement.querySelectorAll(".tile");
+
+    buttons.forEach(button => {
+
+        const r = Number(button.dataset.r);
+        const c = Number(button.dataset.c);
+
+        if (
+            (r === pair.a.r && c === pair.a.c) ||
+            (r === pair.b.r && c === pair.b.c)
+        ) {
+            button.classList.add("hint");
+        }
+    });
+
+    messageElement.textContent =
+        "💡 Hãy nối hai Pokémon đang phát sáng!";
+
+    clearTimeout(hintTimeout);
+
+    hintTimeout = setTimeout(() => {
+        renderBoard();
+    }, 1500);
+}
+
+// ===============================
+// QUA MÀN
+// ===============================
+
+function nextLevel() {
+
+    clearTimeout(hintTimeout);
+
+    level++;
+
+    time += EXTRA_TIME;
+
+    hintCount = HINTS_PER_LEVEL;
+
+    // Qua mỗi màn được cộng thêm một lượt xáo trộn
+    shuffleCount++;
+
+    selected = null;
+    busy = false;
+
+    generateBoard();
+
+    updateInfo();
+
+    messageElement.textContent =
+        `🎉 Hoàn thành màn ${level - 1}! Chào mừng đến màn ${level}!`;
+
+}
+
+// ===============================
+// ĐIỂM VÀ THÔNG SỐ
+// ===============================
+
+function updateInfo() {
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("time").textContent = time;
+    document.getElementById("level").textContent = level;
+
+    document.getElementById("hints").textContent = hintCount;
+
+    document.getElementById("shuffles").textContent =
+        shuffleCount;
+}
+
+// ===============================
+// ĐỒNG HỒ
+// ===============================
+
+function startTimer() {
+
+    clearInterval(timer);
+
+    timer = setInterval(() => {
+
+        if (paused || gameOver) return;
+
+        time--;
+
+        updateInfo();
+
+        if (time <= 0) {
+            endGame();
+        }
+
+    }, 1000);
+}
+
+// ===============================
+// KẾT THÚC
+// ===============================
+
+function endGame() {
+
+    gameOver = true;
+
+    clearInterval(timer);
+
+    showOverlay(
+        "⏰ HẾT GIỜ!",
+        `Bạn đạt ${score} điểm và đã đến màn ${level}.`,
+        "Chơi lại",
+        startGame
+    );
+}
+
+// ===============================
+// TẠM DỪNG
+// ===============================
+
+function pauseGame() {
+
+    if (gameOver) return;
+
+    paused = !paused;
+
+    const pauseButton = document.getElementById("pause");
+
+    if (paused) {
+
+        pauseButton.textContent = "▶ Tiếp tục";
+
+        showOverlay(
+            "⏸ ĐÃ TẠM DỪNG",
+            "Trò chơi đang được tạm dừng.",
+            "Tiếp tục",
+            () => {
+                paused = false;
+                pauseButton.textContent = "⏸ Tạm dừng";
+                document.getElementById("overlay").style.display = "none";
+            }
+        );
+
+    } else {
+
+        pauseButton.textContent = "⏸ Tạm dừng";
+
+        document.getElementById("overlay").style.display = "none";
+    }
+}
+
+// ===============================
+// HIỂN THỊ THÔNG BÁO
+// ===============================
+
+function showOverlay(title, text, buttonText, callback) {
+
+    document.getElementById("overlayTitle").textContent = title;
+    document.getElementById("overlayText").textContent = text;
+
+    const button = document.getElementById("overlayButton");
+
+    button.textContent = buttonText;
+    button.onclick = callback;
+
+    document.getElementById("overlay").style.display = "flex";
+}
+
+// ===============================
+// NÚT ĐIỀU KHIỂN
+// ===============================
+
+document.getElementById("restart").addEventListener(
+    "click",
+    startGame
+);
+
+document.getElementById("hint").addEventListener(
+    "click",
+    showHint
+);
+
+document.getElementById("shuffle").addEventListener(
+    "click",
+    () => shuffleBoard(false)
+);
+
+document.getElementById("pause").addEventListener(
+    "click",
+    pauseGame
+);
+
+// BẮT ĐẦU GAME
+startGame();
+
+</script>
+
+</body>
+</html>
